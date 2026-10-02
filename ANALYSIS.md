@@ -3,6 +3,6 @@
 Authored by:
 
 - Percie Louise Y. Samaniego (`@perky-boo25`)
-- Full Name (`@github-username`)
+- Dan Gabriel P. Guevara (`@d4landan`)
 
 ## Description

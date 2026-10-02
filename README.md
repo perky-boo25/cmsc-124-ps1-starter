@@ -10,7 +10,7 @@ toolchains, and local verification details for the work that the manual defines.
 Replace the two entries below. An assigned trio adds one entry.
 
 - Percie Louise Y. Samaniego (`@perky-boo25`)
-- Full Name (`@github-username`)
+- Dan Gabriel P. Guevara (`@d4landan`)
 
 ## Files You May Change
 

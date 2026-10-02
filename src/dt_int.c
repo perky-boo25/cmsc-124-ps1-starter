@@ -33,10 +33,26 @@ dt_status dt_int_add(long long a, long long b, long long *out)
        dt_int_add(2, 3, &out)          -> DT_OK, out = 5
        dt_int_add(LLONG_MAX, 1, &out)  -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case, cases/boundary/int_overflow_add.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+    //(void)a;
+    //(void)b;
+    //(void)out;
+    //return DT_ERR_OVERFLOW;
+
+    // i checked LLONG_MAX - b because b is positive, and adding it
+    // can make the sum go past the max value of long long
+    if (b > 0 && a > LLONG_MAX - b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // i l checked LLONG_MIN - b because b is negative, and again 
+    // if you add it to a it be go below the min value of long long
+    if (b < 0 && a < LLONG_MIN - b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // otherwise, its fine to add them
+    *out = a + b ;
+    return DT_OK;
 }
 
 /*
@@ -70,8 +86,55 @@ dt_status dt_int_mul(long long a, long long b, long long *out)
        dt_int_mul(LLONG_MIN, -1, &out)   -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case,
        cases/boundary/int_mul_min_by_negative_one.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+    //(void)a;
+    //(void)b;
+    //(void)out;
+    //return DT_ERR_OVERFLOW;
+
+    // handling the zero; zero property of multiplication
+    if (a == 0 || b == 0){
+        *out = 0;
+        return DT_OK;
+    }
+
+    // long long value = -9223372036854775808 to 9223372036854775807
+    // if i multiply LLONG_MIN by - 1, it will exceed the LLONG_MAX by 1
+    if (( a == -1 && b == LLONG_MIN) || (a == LLONG_MIN && b == -1)){
+        return DT_ERR_OVERFLOW;
+    }
+
+    // both are positive, and checking if it will exceed LLONG_MAX
+    // divided LLONG_MAX by b because a * b > LLONG_MAX means a > LLONG_MAX / b
+    if (a > 0 && b > 0 && a > LLONG_MAX / b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // * different signs; checking if the product goes below LLONG_MIN
+    // b is neg; a * b < LLONG_MIN means that b < LLONG_MIN / a
+    // a is postive so  dividing it by LLONG_MIN retains sign
+    if (a > 0 && b < 0 && b < LLONG_MIN / a) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // a is neg; a * b < LLONG_MIN means that a < LLONG_MIN / b
+    // b is postive so  dividing it by LLONG_MIN retains sign
+    if (a < 0 && b > 0 && a < LLONG_MIN / b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // * same signs will result to positive
+
+    // both postive; checking if it will exceed LLONG_MAX
+    if (a > 0 && b > 0 && a > LLONG_MAX / b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // both negative; checking if the product exceeds LLONG_MAX
+    if (a < 0 && b < 0 && a < LLONG_MAX / b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    *out = a * b;
+    return DT_OK;
+
 }

@@ -132,6 +132,9 @@ dt_status dt_int_mul(long long a, long long b, long long *out)
     // both negative; checking if the product exceeds LLONG_MAX
     if (a < 0 && b < 0 && a < LLONG_MAX / b) {
         return DT_ERR_OVERFLOW;
-    }   
+    }
+
+    *out = a * b;
+    return DT_OK;
 
 }

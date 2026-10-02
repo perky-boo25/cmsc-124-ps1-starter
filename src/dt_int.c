@@ -67,10 +67,21 @@ dt_status dt_int_sub(long long a, long long b, long long *out)
        dt_int_sub(10, 4, &out)                 -> DT_OK, out = 6
        dt_int_sub(LLONG_MIN + 1, 2, &out)      -> DT_ERR_OVERFLOW, out untouched
        cases/normal/int_arithmetic.case, cases/boundary/int_overflow_sub_min.case */
-    (void)a;
-    (void)b;
-    (void)out;
-    return DT_ERR_OVERFLOW;
+    // b is positive, so a - b moves down
+    // when a < LLONG_MIN + b (LLONG_MIN + b can't overflow)
+    if (b > 0 && a < LLONG_MIN + b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    // b is negative, so a - b moves up
+    // when a > LLONG_MAX + b (LLONG_MAX + b can't overflow)
+    // covers b == LLONG_MIN without ever computing -b
+    if (b < 0 && a > LLONG_MAX + b) {
+        return DT_ERR_OVERFLOW;
+    }
+
+    *out = a - b;
+    return DT_OK;
 }
 
 /*

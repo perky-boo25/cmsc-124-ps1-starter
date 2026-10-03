@@ -65,7 +65,26 @@ dt_status dt_enum_from_name(const char *name, int *out)
        dt_enum_from_name("PURPLE", &out)  -> DT_ERR_RANGE, out untouched
        dt_enum_from_name("1", &out)       -> DT_ERR_RANGE because no text matches
        cases/normal/enum_names.case */
-    (void)name;
-    (void)out;
+    //(void)name;
+    //(void)out;
+    //return DT_ERR_RANGE;
+
+    // if the pointer is null, return error to avoid crash
+    if (name == NULL) {
+        return DT_ERR_RANGE;
+    }
+
+    // loop through the COLOR_NAMES array
+    for(int i = 0; i < 3; i++){
+
+        // used strcmp to compare input string with current color
+        // strcmp() - when exact matched, it returns 0
+        if(strcmp(name, COLOR_NAMES[i]) == 0 ){
+            *out = i;
+            return DT_OK;
+        }
+    }
+
+    // if it match was never after iterating the loop, then return err
     return DT_ERR_RANGE;
 }

@@ -99,7 +99,16 @@ void dt_array_free(dt_array *a)
        Preserve the referenced values. The driver environment owns them.
        an array holding a string  -> the element block goes, the string stays
        dt_array_free(NULL)        -> returns, having done nothing */
-    (void)a;
+    //(void)a;
+
+    // checks if NULL first, so it can safely do nothingg
+    if ( a != NULL) {
+        // free inner array so that the elements are free first
+        free(a->elements);
+
+        // free struct itself, so that the descriptor is released to preserve ref val
+        free(a);
+    }
 }
 
 /*

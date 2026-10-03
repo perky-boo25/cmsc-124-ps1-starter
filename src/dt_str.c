@@ -140,10 +140,63 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
        s holds "hello": dt_str_append(s, ", world", 7) -> DT_OK, len is now 12
        an allocation failure                           -> DT_ERR_CAPACITY, s unchanged
        cases/normal/string_building.case, cases/capacity/string_growth.case */
-    (void)s;
-    (void)bytes;
-    (void)length;
-    return DT_ERR_CAPACITY;
+    //(void)s;
+    //(void)bytes;
+    //(void)length;
+    //return DT_ERR_CAPACITY;
+
+    // * TO DO: remove before submitting; nong ja ang summary for append 
+    // basically, gin-check ko anay nong if possible pa mag-add ang new data without exceeding the maximum size, para sure nga indi mag-overflow
+    // then I check if the current storage is enough, if not, gin-expand ko siya by making the space bigger, then gin-copy ko ang new data after the existing data
+    // after that, gin-update ko ang total amount of data and placed the ending marker right after it para properly terminated gihapon ang string.
+    // * end deletion here, ako lang nong madelete. thanks
+
+    // i subtract the current length and 1 first to check how much space is still available without overflow
+    size_t available = SIZE_MAX - s->length -1;
+    if(length > available) {
+        return DT_ERR_CAPACITY;
+    }
+
+    // I add the new length to the current length after checking for overflow,
+    // so the result is safe to use.
+    size_t new_length = s->length + length;
+
+    // add one for the buffer ('\0')
+    size_t required_capacity = new_length + 1;
+
+    
+    // realloc() - resizes an already allocated block of memory
+
+    // i double the space instead of adding only what is needed, 
+    // so repeated small appends won't keep copying the whole string
+    if(required_capacity > s->capacity) {
+        size_t new_capacity = s->capacity == 0 ? 16 : s->capacity*2;
+        if(new_capacity < required_capacity) {
+            new_capacity = required_capacity;
+        }
+
+        // temporary pointer for realloc. If the allocation fails, 
+        // the original string memory is left perfectly valid and untouched
+        char *new_bytes = realloc(s->bytes, new_capacity);
+        if (new_bytes == NULL) {
+            return DT_ERR_CAPACITY;
+        }
+        s->bytes = new_bytes;
+        s->capacity = new_capacity;
+    }
+
+    // started copying at the current length so the new bytes will be added after the old ones
+    if(length > 0 && bytes != NULL){
+        memcpy(s->bytes + s->length, bytes, length);
+    }
+
+    // update length after copying
+    s->length = new_length;
+
+    // i put the '\0' after the new length, so buffer properly terminates
+    s->bytes[s->length] = '\0';
+
+    return DT_OK;
 }
 
 /*

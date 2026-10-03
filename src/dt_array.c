@@ -165,10 +165,26 @@ dt_status dt_array_get(const dt_array *a, long long index, dt_value *out)
        cases/boundary/array_index_above_upper.case,
        cases/boundary/array_index_below_lower.case,
        cases/boundary/array_full_range_index.case */
-    (void)a;
-    (void)index;
-    (void)out;
-    return DT_ERR_RANGE;
+    
+    // below the lower bound is out of range
+    if (index < a->lower_bound) {
+        return DT_ERR_RANGE;
+    }
+
+    // subtracting as signed can overflow, so i do it unsigned
+    // index >= lower_bound here, so the distance is never negative
+    unsigned long long distance =
+        (unsigned long long)index - (unsigned long long)a->lower_bound;
+
+    // distance must be less than length, otherwise it's past the end
+    // an empty array always fails here, so elements is never read
+    if (distance >= (unsigned long long)a->length) {
+        return DT_ERR_RANGE;
+    }
+
+    // only write to out after the checks pass
+    *out = a->elements[(size_t)distance];
+    return DT_OK;
 }
 
 /*
@@ -184,8 +200,23 @@ dt_status dt_array_set(dt_array *a, long long index, dt_value v)
          dt_array_set(a, -1, dt_value_int(10))  -> DT_OK, offset 0 holds 10
          dt_array_set(a,  2, dt_value_int(10))  -> DT_ERR_RANGE, nothing changes
        cases/normal/array_basics.case, cases/boundary/array_negative_lower_bound.case */
-    (void)a;
-    (void)index;
-    (void)v;
-    return DT_ERR_RANGE;
+    
+    // same check as get: below the lower bound is out of range
+    if (index < a->lower_bound) {
+        return DT_ERR_RANGE;
+    }
+
+    // unsigned distance so the subtraction can't overflow
+    unsigned long long distance =
+        (unsigned long long)index - (unsigned long long)a->lower_bound;
+
+    // past the end is out of range, nothing gets changed
+    if (distance >= (unsigned long long)a->length) {
+        return DT_ERR_RANGE;
+    }
+
+    // overwrite the slot
+    // the old value belongs to the environment, so nothing gets freed here
+    a->elements[(size_t)distance] = v;
+    return DT_OK;
 }

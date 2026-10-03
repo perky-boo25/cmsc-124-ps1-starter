@@ -37,9 +37,54 @@ dt_str *dt_str_new(const char *bytes, size_t length)
        dt_str_new("hello", 5)  -> a string whose dt_str_len is 5
        dt_str_new("a\0b", 3)   -> a string whose dt_str_len remains 3
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)bytes;
-    (void)length;
-    return NULL;
+    //(void)bytes;
+    //(void)length;
+    //return NULL;
+
+    // length + 1 would overflow, since we need one extra byte for '\0'
+    if (length == SIZE_MAX) {
+        return NULL;
+    }
+
+    // malloc() - used to allocate a block of memory of the specific size
+    // created a memory space for s to store the dtr_str struct
+    dt_str *s = malloc(sizeof(dt_str));
+
+    // if no memory was allocated, then return NULL
+    if (s == NULL){
+        retun NULL;
+    }
+
+    // added 1 because the '\0' needs its own space 
+    // even though it is not part of the length
+    s->bytes = malloc(length + 1);
+
+
+    // free() - deallocates prev allocated memory to be reused by the system
+    // for the bytes that are not allocated, free the memory
+    if(s->bytes == NULL){
+        free(s);
+        return NULL;
+    }
+
+    // memcopy() - copies a specified number of bytes from one memory space to another
+    // copy length bytes so an embedded '\0' is still treated as part of the data
+    if(length > 0 && bytes != NULL){
+        memcpy(s->bytes, bytes, length);
+    }
+
+    // length points to the first space after the copied bytes, put '\0'
+    // this is to properly terminate the buffer
+    s->bytes[length] = '\0';
+
+    // i stored the length separately so it doesn't depend on '\0' 
+    // length counts actual data dytes , including '\0'
+    s->length = length;
+
+    // add 1 because the capacity also includes the space for '\0'
+    s->capacity = length + 1;
+
+    return s;
 }
 
 /*
@@ -95,10 +140,10 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
        s holds "hello": dt_str_append(s, ", world", 7) -> DT_OK, len is now 12
        an allocation failure                           -> DT_ERR_CAPACITY, s unchanged
        cases/normal/string_building.case, cases/capacity/string_growth.case */
-    (void)s;
-    (void)bytes;
-    (void)length;
-    return DT_ERR_CAPACITY;
+    //(void)s;
+    //(void)bytes;
+    //(void)length;
+    //return DT_ERR_CAPACITY;
 }
 
 /*

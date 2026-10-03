@@ -37,9 +37,54 @@ dt_str *dt_str_new(const char *bytes, size_t length)
        dt_str_new("hello", 5)  -> a string whose dt_str_len is 5
        dt_str_new("a\0b", 3)   -> a string whose dt_str_len remains 3
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)bytes;
-    (void)length;
-    return NULL;
+    //(void)bytes;
+    //(void)length;
+    //return NULL;
+
+    // length + 1 would overflow, since we need one extra byte for '\0'
+    if (length == SIZE_MAX) {
+        return NULL;
+    }
+
+    // malloc() - used to allocate a block of memory of the specific size
+    // created a memory space for s to store the dtr_str struct
+    dt_str *s = malloc(sizeof(dt_str));
+
+    // if no memory was allocated, then return NULL
+    if (s == NULL){
+        return NULL;
+    }
+
+    // added 1 because the '\0' needs its own space 
+    // even though it is not part of the length
+    s->bytes = malloc(length + 1);
+
+
+    // free() - deallocates prev allocated memory to be reused by the system
+    // for the bytes that are not allocated, free the memory
+    if(s->bytes == NULL){
+        free(s);
+        return NULL;
+    }
+
+    // memcopy() - copies a specified number of bytes from one memory space to another
+    // copy length bytes so an embedded '\0' is still treated as part of the data
+    if(length > 0 && bytes != NULL){
+        memcpy(s->bytes, bytes, length);
+    }
+
+    // length points to the first space after the copied bytes, put '\0'
+    // this is to properly terminate the buffer
+    s->bytes[length] = '\0';
+
+    // i stored the length separately so it doesn't depend on '\0' 
+    // length counts actual data dytes , including '\0'
+    s->length = length;
+
+    // add 1 because the capacity also includes the space for '\0'
+    s->capacity = length + 1;
+
+    return s;
 }
 
 /*
@@ -95,10 +140,63 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
        s holds "hello": dt_str_append(s, ", world", 7) -> DT_OK, len is now 12
        an allocation failure                           -> DT_ERR_CAPACITY, s unchanged
        cases/normal/string_building.case, cases/capacity/string_growth.case */
-    (void)s;
-    (void)bytes;
-    (void)length;
-    return DT_ERR_CAPACITY;
+    //(void)s;
+    //(void)bytes;
+    //(void)length;
+    //return DT_ERR_CAPACITY;
+
+    // * TO DO: remove before submitting; nong ja ang summary for append 
+    // basically, gin-check ko anay nong if possible pa mag-add ang new data without exceeding the maximum size, para sure nga indi mag-overflow
+    // then I check if the current storage is enough, if not, gin-expand ko siya by making the space bigger, then gin-copy ko ang new data after the existing data
+    // after that, gin-update ko ang total amount of data and placed the ending marker right after it para properly terminated gihapon ang string.
+    // * end deletion here, ako lang nong madelete. thanks
+
+    // i subtract the current length and 1 first to check how much space is still available without overflow
+    size_t available = SIZE_MAX - s->length -1;
+    if(length > available) {
+        return DT_ERR_CAPACITY;
+    }
+
+    // I add the new length to the current length after checking for overflow,
+    // so the result is safe to use.
+    size_t new_length = s->length + length;
+
+    // add one for the buffer ('\0')
+    size_t required_capacity = new_length + 1;
+
+    
+    // realloc() - resizes an already allocated block of memory
+
+    // i double the space instead of adding only what is needed, 
+    // so repeated small appends won't keep copying the whole string
+    if(required_capacity > s->capacity) {
+        size_t new_capacity = s->capacity == 0 ? 16 : s->capacity*2;
+        if(new_capacity < required_capacity) {
+            new_capacity = required_capacity;
+        }
+
+        // temporary pointer for realloc. If the allocation fails, 
+        // the original string memory is left perfectly valid and untouched
+        char *new_bytes = realloc(s->bytes, new_capacity);
+        if (new_bytes == NULL) {
+            return DT_ERR_CAPACITY;
+        }
+        s->bytes = new_bytes;
+        s->capacity = new_capacity;
+    }
+
+    // started copying at the current length so the new bytes will be added after the old ones
+    if(length > 0 && bytes != NULL){
+        memcpy(s->bytes + s->length, bytes, length);
+    }
+
+    // update length after copying
+    s->length = new_length;
+
+    // i put the '\0' after the new length, so buffer properly terminates
+    s->bytes[s->length] = '\0';
+
+    return DT_OK;
 }
 
 /*
@@ -118,11 +216,34 @@ dt_status dt_str_substr(const dt_str *s, size_t start, size_t length, dt_str **o
          dt_str_substr(s, 3, 5, &out)  -> DT_ERR_RANGE, *out untouched
        an allocation failure           -> DT_ERR_CAPACITY, *out untouched
        cases/boundary/substr_exact_end.case, cases/boundary/substr_past_end.case */
-    (void)s;
-    (void)start;
-    (void)length;
-    (void)out;
-    return DT_ERR_RANGE;
+
+    //(void)s;
+    //(void)start;
+    //(void)length;
+    //(void)out;
+    //return DT_ERR_RANGE;
+
+    // i check first if the starting position is still within the string
+    if(start > s->length){
+        return DT_ERR_RANGE;
+    }
+
+    // i subtract the starting position from the total length to check if the requested length still fits
+    // i do this instead of adding them first to avoid possible overflow
+    if(length > s->length - start) {
+        return DT_ERR_RANGE;
+    }
+
+    // i create the new string starting from the given position and copy only the requested length
+    dt_str *piece = dt_str_new(s->bytes + start, length);
+
+    // if no memory was allocated for the new string, return a capacity error
+    if(piece == NULL){
+        return DT_ERR_CAPACITY;
+    }
+
+    *out = piece;
+    return DT_OK;
 }
 
 /*
@@ -137,7 +258,20 @@ bool dt_str_eq(const dt_str *a, const dt_str *b)
        "hello" and "world"  -> false
        "a\0b" and "a"       -> false because their lengths are 3 and 1
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)a;
-    (void)b;
-    return false;
+    //(void)a;
+    //(void)b;
+    //return false;
+
+    // if both lengths are not equal then it str itself isn't equal
+    if(a->length != b->length) {
+        return false;
+    }
+
+    // they would not pass this point if the lengths aren't eq
+    // this would mean that both are empty strings
+    if (a->length == 0) {
+        return true;
+    }
+
+    return memcmp(a->bytes, b->bytes, a->length) == 0;
 }

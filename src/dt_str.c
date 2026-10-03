@@ -95,7 +95,16 @@ void dt_str_free(dt_str *s)
     /* TODO: Release the buffer. Then release the handle. Accept NULL.
        dt_str_free(s)     -> the buffer and the handle are both released
        dt_str_free(NULL)  -> returns, having done nothing */
-    (void)s;
+    
+    // free(NULL) is safe, but we skip the whole thing so s->bytes
+    // is never read through a NULL handle
+    if (s == NULL) {
+        return;
+    }
+
+    // release the buffer first, then the handle that points to it
+    free(s->bytes);
+    free(s);
 }
 
 /*
@@ -107,8 +116,9 @@ size_t dt_str_len(const dt_str *s)
        after `str new greeting "hello"` then `str append greeting ", world"`:
          dt_str_len(greeting) -> 12
        cases/normal/string_building.case */
-    (void)s;
-    return 0;
+    
+    // the length is a stored field, so this never scans the bytes
+    return s->length;
 }
 
 /*
@@ -122,8 +132,10 @@ const char *dt_str_bytes(const dt_str *s)
          dt_str_bytes(s) -> the three bytes 'a', 0, 'b'
          dt_str_len(s)   -> 3, the required read length
        cases/capacity/embedded_zero_byte.case */
-    (void)s;
-    return "";
+    
+    // callers must pair this pointer with dt_str_len
+    // because the data can contain embedded zero bytes
+    return s->bytes;
 }
 
 /*

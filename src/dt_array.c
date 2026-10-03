@@ -43,9 +43,50 @@ dt_array *dt_array_new(size_t length, long long lower_bound)
        dt_array_new(0, 0)   -> an empty array
        cases/normal/array_basics.case, cases/boundary/array_empty.case,
        cases/boundary/array_negative_lower_bound.case */
-    (void)length;
-    (void)lower_bound;
-    return NULL;
+
+    // the element block would be length * sizeof(dt_value) bytes;
+    // dividing instead of multiplying keeps this check from wrapping
+    if (length > SIZE_MAX / sizeof(dt_value)) {
+        return NULL;
+    }
+
+    // a nonempty array's final index is lower_bound + (length - 1).
+    // headroom = how far lower_bound can go before passing LLONG_MAX.
+    // it's computed in unsigned arithmetic, which wraps by definition,
+    // so it is correct for negative bounds too (LLONG_MIN gives 2^64 - 1)
+    if (length > 0) {
+        unsigned long long headroom =
+            (unsigned long long)LLONG_MAX - (unsigned long long)lower_bound;
+        if ((unsigned long long)(length - 1) > headroom) {
+            return NULL;
+        }
+    }
+
+    dt_array *a = malloc(sizeof(dt_array));
+    if (a == NULL) {
+        return NULL;
+    }
+
+    // a zero length is legal, but malloc(0) may return NULL or a special pointer,
+    // empty array just keeps elements as NULL 
+    if (length == 0) {
+        a->elements = NULL;
+    } else {
+        a->elements = malloc(length * sizeof(dt_value));
+        if (a->elements == NULL) {
+            free(a);
+            return NULL;
+        }
+
+        // every slot starts out nil
+        for (size_t i = 0; i < length; i++) {
+            a->elements[i] = dt_value_nil();
+        }
+    }
+
+    a->length = length;
+    a->lower_bound = lower_bound;
+    return a;
 }
 
 /*

@@ -99,7 +99,16 @@ void dt_array_free(dt_array *a)
        Preserve the referenced values. The driver environment owns them.
        an array holding a string  -> the element block goes, the string stays
        dt_array_free(NULL)        -> returns, having done nothing */
-    (void)a;
+    //(void)a;
+
+    // checks if NULL first, so it can safely do nothingg
+    if ( a != NULL) {
+        // free inner array so that the elements are free first
+        free(a->elements);
+
+        // free struct itself, so that the descriptor is released to preserve ref val
+        free(a);
+    }
 }
 
 /*
@@ -112,8 +121,11 @@ size_t dt_array_len(const dt_array *a)
        after `arr new a 3 -1`:  dt_array_len(a) -> 3, the same three elements
        after `arr new a 0 0`:   dt_array_len(a) -> 0
        cases/normal/array_basics.case, cases/boundary/array_empty.case */
-    (void)a;
-    return 0;
+    //(void)a;
+    //return 0;
+    
+    // return length stored in descriptor
+    return a->length;
 }
 
 /*
@@ -128,8 +140,11 @@ long long dt_array_lower_bound(const dt_array *a)
        after `arr new a 3 1`:   dt_array_lower_bound(a) -> 1
        cases/boundary/array_negative_lower_bound.case,
        cases/boundary/array_lower_bound_one.case */
-    (void)a;
-    return 0;
+    //(void)a;
+    //return 0;
+
+    // return the lowerbound so other functions can calc memory offsets later
+    return a->lower_bound;
 }
 
 /*

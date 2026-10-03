@@ -258,7 +258,20 @@ bool dt_str_eq(const dt_str *a, const dt_str *b)
        "hello" and "world"  -> false
        "a\0b" and "a"       -> false because their lengths are 3 and 1
        cases/normal/string_building.case, cases/capacity/embedded_zero_byte.case */
-    (void)a;
-    (void)b;
-    return false;
+    //(void)a;
+    //(void)b;
+    //return false;
+
+    // if both lengths are not equal then it str itself isn't equal
+    if(a->length != b->length) {
+        return false;
+    }
+
+    // they would not pass this point if the lengths aren't eq
+    // this would mean that both are empty strings
+    if (a->length == 0) {
+        return true;
+    }
+
+    return memcmp(a->bytes, b->bytes, a->length) == 0;
 }

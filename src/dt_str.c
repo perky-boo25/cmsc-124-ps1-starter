@@ -216,11 +216,34 @@ dt_status dt_str_substr(const dt_str *s, size_t start, size_t length, dt_str **o
          dt_str_substr(s, 3, 5, &out)  -> DT_ERR_RANGE, *out untouched
        an allocation failure           -> DT_ERR_CAPACITY, *out untouched
        cases/boundary/substr_exact_end.case, cases/boundary/substr_past_end.case */
-    (void)s;
-    (void)start;
-    (void)length;
-    (void)out;
-    return DT_ERR_RANGE;
+
+    //(void)s;
+    //(void)start;
+    //(void)length;
+    //(void)out;
+    //return DT_ERR_RANGE;
+
+    // i check first if the starting position is still within the string
+    if(start > s->length){
+        return DT_ERR_RANGE;
+    }
+
+    // i subtract the starting position from the total length to check if the requested length still fits
+    // i do this instead of adding them first to avoid possible overflow
+    if(length > s->length - start) {
+        return DT_ERR_RANGE;
+    }
+
+    // i create the new string starting from the given position and copy only the requested length
+    dt_str *piece = dt_str_new(s->bytes + start, length);
+
+    // if no memory was allocated for the new string, return a capacity error
+    if(piece == NULL){
+        return DT_ERR_CAPACITY;
+    }
+
+    *out = piece;
+    return DT_OK;
 }
 
 /*

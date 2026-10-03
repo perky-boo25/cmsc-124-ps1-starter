@@ -26,9 +26,9 @@ bool dt_enum_is_valid(int ordinal)
        dt_enum_is_valid(2)   -> true, BLUE
        dt_enum_is_valid(3)   -> false, one past the set
        dt_enum_is_valid(-1)  -> false, below the lower bound */
-    (void)ordinal;
-    (void)COLOR_NAMES; /* Delete this line after you use COLOR_NAMES. */
-    return false;
+    
+    // check both ends of the range to ensure the ordinal is valid
+    return ordinal >= 0 && ordinal < DT_COLOR_COUNT;
 }
 
 /*

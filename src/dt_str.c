@@ -52,7 +52,7 @@ dt_str *dt_str_new(const char *bytes, size_t length)
 
     // if no memory was allocated, then return NULL
     if (s == NULL){
-        retun NULL;
+        return NULL;
     }
 
     // added 1 because the '\0' needs its own space 
@@ -140,10 +140,10 @@ dt_status dt_str_append(dt_str *s, const char *bytes, size_t length)
        s holds "hello": dt_str_append(s, ", world", 7) -> DT_OK, len is now 12
        an allocation failure                           -> DT_ERR_CAPACITY, s unchanged
        cases/normal/string_building.case, cases/capacity/string_growth.case */
-    //(void)s;
-    //(void)bytes;
-    //(void)length;
-    //return DT_ERR_CAPACITY;
+    (void)s;
+    (void)bytes;
+    (void)length;
+    return DT_ERR_CAPACITY;
 }
 
 /*

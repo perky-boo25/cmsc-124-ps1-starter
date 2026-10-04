@@ -292,9 +292,49 @@ dt_status dt_map_remove(dt_map *m, const char *key)
          dt_map_remove(m, "ghost")  -> DT_ERR_KEY, nothing changes
        reinserting "alpha" appends it after "gamma"
        cases/normal/map_basics.case, cases/boundary/map_remove_missing_key.case */
-    (void)m;
-    (void)key;
-    return DT_ERR_KEY;
+    
+    // find the bucket the same way put and get do
+    unsigned long long hash = hash_key(key);
+    size_t bucket_index = hash % BUCKET_COUNT;
+
+    // walk the chain and keep track of the node before the current one,
+    // because we need it to unlink the entry
+    struct map_entry *prev = NULL;
+    struct map_entry *current = m->buckets[bucket_index];
+    while (current != NULL && strcmp(current->key, key) != 0) {
+        prev = current;
+        current = current->next;
+    }
+
+    // never found it, so nothing changes
+    if (current == NULL) {
+        return DT_ERR_KEY;
+    }
+
+    // unlink from the bucket chain. if there's no prev, it was the first node
+    if (prev == NULL) {
+        m->buckets[bucket_index] = current->next;
+    } else {
+        prev->next = current->next;
+    }
+
+    // find this entry in the order array
+    size_t pos = 0;
+    while (pos < m->count && m->order[pos] != current) {
+        pos++;
+    }
+
+    // shift everything after it one slot to the left so the order stays
+    // intact and there's no hole. if it was the last one, this moves nothing
+    memmove(&m->order[pos], &m->order[pos + 1],
+            (m->count - pos - 1) * sizeof(struct map_entry *));
+    m->count--;
+
+    // free the copied key and the node. the value belongs to the environment
+    free(current->key);
+    free(current);
+    return DT_OK;
+
 }
 
 /*
@@ -310,8 +350,13 @@ dt_status dt_map_key_at(const dt_map *m, size_t index, const char **out)
          dt_map_key_at(m, 0, &out)  -> DT_OK, *out = "alpha"
          dt_map_key_at(m, 3, &out)  -> DT_ERR_RANGE, *out untouched
        cases/normal/map_basics.case */
-    (void)m;
-    (void)index;
-    (void)out;
-    return DT_ERR_RANGE;
+    
+    // index has to be less than the number of keys
+    if (index >= m->count) {
+        return DT_ERR_RANGE;
+    }
+
+    // only write to out after the check passes
+    *out = m->order[index]->key;
+    return DT_OK;
 }

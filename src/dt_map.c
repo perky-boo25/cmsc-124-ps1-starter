@@ -250,9 +250,32 @@ dt_status dt_map_get(const dt_map *m, const char *key, dt_value *out)
          dt_map_get(m, "beta", &out)   -> DT_OK, *out is the integer 22
          dt_map_get(m, "ghost", &out)  -> DT_ERR_KEY, *out untouched
        cases/normal/map_basics.case, cases/boundary/map_missing_key.case */
-    (void)m;
-    (void)key;
-    (void)out;
+    //(void)m;
+    //(void)key;
+    //(void)out;
+    //return DT_ERR_KEY;
+
+    // used hash to get the bucket index
+    unsigned long long hash = hash_key(key);
+    int bucket_index = hash % BUCKET_COUNT;
+
+    // getting the start/first node of in the bucket's linked list
+    struct map_entry *current = m->buckets[bucket_index];
+
+    //traversing the linked list to find the key
+    while (current != NULL) {
+
+        // if key matches, ass the value to out adn return DT_OK;
+        if (strcmp(current->key, key) == 0) {
+            *out = current->value;
+            return DT_OK;
+        }
+        // move to next node
+        current = current->next;
+    }
+
+    // if loop finishes without returning, key is missing
+    // return error and leave *out untouched
     return DT_ERR_KEY;
 }
 

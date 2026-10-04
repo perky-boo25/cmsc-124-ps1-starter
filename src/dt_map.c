@@ -71,7 +71,7 @@ dt_map *dt_map_new(void)
         dt_map *m = malloc(sizeof(dt_map));
 
 
-        if(m =NULL){
+        if(m == NULL){
             return NULL;
         }
 

@@ -165,10 +165,76 @@ dt_status dt_map_put(dt_map *m, const char *key, dt_value v)
        put "beta" -> 22 on that map       -> DT_OK, same position, new value
        an allocation failure              -> DT_ERR_CAPACITY, map unchanged
        cases/normal/map_basics.case */
-    (void)m;
-    (void)key;
-    (void)v;
-    return DT_ERR_CAPACITY;
+    //(void)m;
+    //(void)key;
+    //(void)v;
+    //return DT_ERR_CAPACITY;
+
+    //* put refresher:
+    // if key does not exist, create new entry, track order -> DT_OK
+    // if key exists, overwrite old value -> return DT_OK
+    // if malloc fails at certain points then DT_ERR_CAPACITY
+
+    // used hash to convert string key into valid bucket index
+    unsigned long long hash = hash_key(key);
+    int bucket_index = hash % BUCKET_COUNT;
+
+    // seach through linked list to see if key exists
+    struct map_entry *current = m->buckets[bucket_index];
+    while(current != NULL){
+
+        // if key is found, then overwrite the value on this
+        if(strcmp(current->key, key) == 0){
+            current->value = v;
+            return DT_OK;
+        }
+        current = current->next;
+    }
+
+    // key was just created, check if we need to grow the arbitrary capacity
+    if(m->count == m->capacity ){
+        size_t new_capacity = m->capacity * 2;
+        struct map_entry **new_order = realloc(m->order, new_capacity * sizeof(struct map_entry *));
+        
+        // if realloc fails, leave the map as is and return the error
+        if(new_order == NULL) {
+            return DT_ERR_CAPACITY;
+        }
+
+        m->order = new_order;
+        m->capacity = new_capacity;
+    }
+
+    // make a new node and allocate a memory for it
+    struct map_entry *new_entry = malloc(sizeof(struct map_entry));
+
+    // if empty ang new_entry then return err
+    if(new_entry == NULL){
+        return DT_ERR_CAPACITY;
+    }
+
+    // memory for the stringgg
+    size_t key_len = strlen(key);
+    new_entry->key = malloc(key_len + 1);   // add 1 for the terminator '\0'
+
+    if (new_entry->key == NULL){
+        free(new_entry);            // if null, free the node so we don't leak memorry
+        return DT_ERR_CAPACITY;
+    }
+
+    // copying actual letters to new memory space and assign the value
+    strcpy(new_entry->key, key);
+    new_entry->value = v;
+
+    // putting it in hash maps at the FRONT of the linked list
+    new_entry->next = m->buckets[bucket_index];
+    m->buckets[bucket_index] = new_entry;
+
+    // record new_entry to the ordered array for printing stability
+    m->order[m->count] = new_entry;
+
+    m->count++;
+    return DT_OK;
 }
 
 /*

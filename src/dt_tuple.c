@@ -33,9 +33,30 @@ dt_tuple *dt_tuple_new(const dt_value *values, size_t count)
        count 9     -> NULL, since DT_TUPLE_MAX_ARITY is 8
        cases/normal/tuple_basics.case, cases/capacity/tuple_max_arity.case,
        cases/capacity/tuple_over_arity.case */
-    (void)values;
-    (void)count;
-    return NULL;
+    //(void)values;
+    //(void)count;
+    //return NULL;
+
+    // check if the requested count exceeds the max tuple size
+    if(count > DT_TUPLE_MAX_ARITY){
+        return NULL;
+    }
+
+    //allocate memory for the tuple itself
+    dt_tuple *t = malloc(sizeof(dt_tuple));
+    if(t == NULL){
+        return NULL;
+    }
+
+    // save the arity (number of elements)
+    t->arity = count;
+
+    // loop through and copy and passed into the array
+    for(size_t i = 0; i < count; i++){
+        t->values[i] = values[i];
+    }
+
+    return t;
 }
 
 /*
@@ -48,7 +69,16 @@ void dt_tuple_free(dt_tuple *t)
        The environment owns those values. dt_array_free follows the same rule.
        a tuple holding a string  -> the tuple goes, the string stays
        dt_tuple_free(NULL)       -> returns, having done nothing */
-    (void)t;
+    //(void)t;
+
+    // return if tuple is null
+    if (t == NULL){
+        return ;
+    }
+
+    // free the tuple struct itself
+    // we don't free the values because the environment owns them
+    free(t);
 }
 
 /*

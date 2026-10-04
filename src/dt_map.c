@@ -20,9 +20,42 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct dt_map {
-    int placeholder; /* TODO: Add the buckets and insertion-order data. */
+#define BUCKET_COUNT 64
+
+// this is for thenode structure of the linked-list inside each bucket
+struct map_entry {
+    char *key;
+    dt_value value;
+    struct map_entry *next;
 };
+struct dt_map {
+    struct map_entry *buckets[BUCKET_COUNT];/* TODO: Add the buckets and insertion-order data. */
+    // kept separate list to remember the exact keys were added
+    // this let later functions instantly grab the key by its position
+    struct map_entry **order;
+    size_t count;
+    size_t capacity;
+};
+
+// 64-bit FNV-1a hash as provided in the pset course material
+static unsigned long long hash_key(const char *key){
+    // starting accumulator. ULL makes each const an unsigned long long
+    unsigned long long h = 14695981039346656037ULL;
+
+    // casting to unsigned char ensures bytes are strictly 0 to 255
+    for(const unsigned char *p = (const unsigned char *)key; *p != '\0'; p++){
+
+        // ^ operator - XORs the byte into the accumulator
+        h ^= (unsigned long long) *p;
+
+        // The multiplication changes the accumulator again before the next byte. 
+        //   Unsigned overflow is defined to wrap, so each pass keeps the low bits 
+        //   and never invokes signed overflow.
+        h *= 1099511628211ULL;
+    }
+
+    return h;
+}
 
 /*
  * dt_map_new builds an empty map. It returns NULL after an allocation failure.

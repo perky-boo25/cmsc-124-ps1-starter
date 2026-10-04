@@ -158,9 +158,18 @@ dt_status dt_record_get(const dt_record *r, const char *field, dt_value *out)
          dt_record_get(person, "age", &out)      -> DT_OK, *out is the integer 36
          dt_record_get(person, "salary", &out)   -> DT_ERR_FIELD, *out untouched
        cases/normal/record_basics.case, cases/boundary/record_unknown_field.case */
-    (void)r;
-    (void)field;
-    (void)out;
+
+    // go through the names one by one. the position where the name
+    // matches is also the position of its value
+    for (size_t i = 0; i < r->count; i++) {
+        if (strcmp(r->names[i], field) == 0) {
+            *out = r->values[i];
+            return DT_OK;
+        }
+    }
+
+    // reached the end with no match, so the record never declared this field.
+    // out stays untouched
     return DT_ERR_FIELD;
 }
 
@@ -177,8 +186,15 @@ dt_status dt_record_set(dt_record *r, const char *field, dt_value v)
          dt_record_set(person, "salary", dt_value_int(1))   -> DT_ERR_FIELD
          the record still has only the fields "name" and "age"
        cases/normal/record_basics.case, cases/boundary/record_unknown_field.case */
-    (void)r;
-    (void)field;
-    (void)v;
+    
+    // same lookup as get
+    for (size_t i = 0; i < r->count; i++) {
+        if (strcmp(r->names[i], field) == 0) {
+            r->values[i] = v;
+            return DT_OK;
+        }
+    }
+
+    // unknown field, record can't grow, so nothing gets added
     return DT_ERR_FIELD;
 }

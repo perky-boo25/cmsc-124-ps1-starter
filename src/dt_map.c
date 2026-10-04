@@ -116,8 +116,7 @@ void dt_map_free(dt_map *m)
 
     // walk every bucket chain and free each entry once.
     // i use the buckets instead of the order array so nothing is freed twice
-    if (m->buckets != NULL) {
-        for (size_t i = 0; i < BUCKET_COUNT; i++) {
+        for (int i = 0; i < BUCKET_COUNT; i++) {
             struct map_entry *e = m->buckets[i];
             while (e != NULL) {
                 struct map_entry *next = e->next;   // save it before freeing e
@@ -126,7 +125,7 @@ void dt_map_free(dt_map *m)
                 e = next;
             }
         }
-    }
+    
 
     // values are not freed, the environment owns them
     free(m->order);

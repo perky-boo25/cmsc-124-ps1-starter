@@ -109,7 +109,30 @@ void dt_map_free(dt_map *m)
        a map holding a string value  -> the nodes and keys go, the string stays
        dt_map_free(NULL)             -> returns, having done nothing
        cases/cleanup/map_churn.case */
-    (void)m;
+
+    if (m == NULL) {
+        return;
+    }
+
+    // walk every bucket chain and free each entry once.
+    // i use the buckets instead of the order array so nothing is freed twice
+    if (m->buckets != NULL) {
+        for (size_t i = 0; i < m->bucket_count; i++) {
+            dt_map_entry *e = m->buckets[i];
+            while (e != NULL) {
+                dt_map_entry *next = e->next;   // save it before freeing e
+                free(e->key);                   // the copied key
+                free(e);                        // the node itself
+                e = next;
+            }
+        }
+    }
+
+    // values are not freed, the environment owns them
+    free(m->buckets);
+    free(m->order);
+    free(m);
+    
 }
 
 /*
@@ -123,8 +146,9 @@ size_t dt_map_len(const dt_map *m)
        after put beta again:          dt_map_len(m) -> 3, still
        after del alpha:               dt_map_len(m) -> 2
        cases/normal/map_basics.case */
-    (void)m;
-    return 0;
+    
+    // count only changes when a key is added or removed, so replacing a value never touches it
+    return m->count;
 }
 
 /*

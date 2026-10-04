@@ -65,7 +65,37 @@ dt_map *dt_map_new(void)
     /* TODO: Return an allocated empty map. Return NULL after an allocation failure.
        dt_map_new()  -> a map whose dt_map_len is 0
        cases/normal/map_basics.case */
-    return NULL;
+    //return NULL;
+
+        //malloc() - reserves amount of memory during program exec and return a pointer to it
+        dt_map *m = malloc(sizeof(dt_map));
+
+
+        if(m =NULL){
+            return NULL;
+        }
+
+        // initialized all contents of the bucket to NULL
+        // to avoid accidentally read garbage memory later
+        for(int i = 0; i < BUCKET_COUNT; i++){
+            m->buckets[i] = NULL;
+        }
+
+        // initialized count to 0 since it doesn't have content yet
+        m->count = 0;
+        m->capacity = 8;    //arbitrary starting size
+
+        // allocate the separate array tot rack insertion order for the printing
+        // if failed, free m so that it doesn't leak
+        m->order = malloc (m->capacity * sizeof(struct map_entry *));
+
+        if(m->order == NULL){
+            free(m);
+            return NULL;
+        }
+
+        return m;
+    
 }
 
 /*

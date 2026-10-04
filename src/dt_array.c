@@ -147,6 +147,31 @@ long long dt_array_lower_bound(const dt_array *a)
     return a->lower_bound;
 }
 
+// shared bounds check for get and set. if index is inside the array it
+// fills *offset and returns true, otherwise it returns false.
+// keeping it in one place means get and set can't end up checking differently
+static bool index_to_offset(const dt_array *a, long long index, size_t *offset)
+{
+    // below the lower bound is out of range
+    if (index < a->lower_bound) {
+        return false;
+    }
+
+    // subtracting as signed can overflow, so i do it unsigned.
+    // index >= lower_bound here, so the distance is never negative
+    unsigned long long distance =
+        (unsigned long long)index - (unsigned long long)a->lower_bound;
+
+    // distance must be less than length, otherwise it's past the end.
+    // an empty array always fails here, so elements is never read
+    if (distance >= (unsigned long long)a->length) {
+        return false;
+    }
+
+    *offset = (size_t)distance;
+    return true;
+}
+
 /*
  * dt_array_get writes the element at index to *out.
  * It returns DT_ERR_RANGE and does not change *out for an invalid index.
@@ -166,24 +191,13 @@ dt_status dt_array_get(const dt_array *a, long long index, dt_value *out)
        cases/boundary/array_index_below_lower.case,
        cases/boundary/array_full_range_index.case */
     
-    // below the lower bound is out of range
-    if (index < a->lower_bound) {
+    size_t offset;
+    if (!index_to_offset(a, index, &offset)) {
         return DT_ERR_RANGE;
     }
 
-    // subtracting as signed can overflow, so i do it unsigned
-    // index >= lower_bound here, so the distance is never negative
-    unsigned long long distance =
-        (unsigned long long)index - (unsigned long long)a->lower_bound;
-
-    // distance must be less than length, otherwise it's past the end
-    // an empty array always fails here, so elements is never read
-    if (distance >= (unsigned long long)a->length) {
-        return DT_ERR_RANGE;
-    }
-
-    // only write to out after the checks pass
-    *out = a->elements[(size_t)distance];
+    // only write to out after the check passes
+    *out = a->elements[offset];
     return DT_OK;
 }
 
@@ -201,22 +215,13 @@ dt_status dt_array_set(dt_array *a, long long index, dt_value v)
          dt_array_set(a,  2, dt_value_int(10))  -> DT_ERR_RANGE, nothing changes
        cases/normal/array_basics.case, cases/boundary/array_negative_lower_bound.case */
     
-    // same check as get: below the lower bound is out of range
-    if (index < a->lower_bound) {
-        return DT_ERR_RANGE;
-    }
-
-    // unsigned distance so the subtraction can't overflow
-    unsigned long long distance =
-        (unsigned long long)index - (unsigned long long)a->lower_bound;
-
-    // past the end is out of range, nothing gets changed
-    if (distance >= (unsigned long long)a->length) {
+    size_t offset;
+    if (!index_to_offset(a, index, &offset)) {
         return DT_ERR_RANGE;
     }
 
     // overwrite the slot
     // the old value belongs to the environment, so nothing gets freed here
-    a->elements[(size_t)distance] = v;
+    a->elements[offset] = v;
     return DT_OK;
 }

@@ -36,9 +36,48 @@ dt_record *dt_record_new(const char **field_names, size_t field_count)
        nine fields                  -> NULL, and the driver reports DT_ERR_CAPACITY
        cases/normal/record_basics.case, cases/capacity/record_max_fields.case,
        cases/capacity/record_over_fields.case */
-    (void)field_names;
-    (void)field_count;
-    return NULL;
+    //(void)field_names;
+    //(void)field_count;
+    //return NULL;
+
+    //if requested fields exceed the limit, return NULL
+    if(field_count > DT_RECORD_MAX_FIELDS){
+        return NULL;
+    }
+
+    // allocate the memory for the record itself
+    dt_record *r = malloc(sizeof(dt_record));
+    if (r == NULL){
+        return NULL;
+    }
+
+    // store the total number of filedss
+    r->count = field_count;
+
+    //iterate through all field names to copy them
+    for(size_t i = 0; i < field_count; i++){
+        size_t name_len = strlen(field_names[i]);
+
+        //aloocate memory for the string with null terminator
+        r->names[i] = malloc(name_len + 1);
+
+        // if allocation fails, free previously allocated strings 
+        if(r->names[i] == NULL){
+            //free already copied strings
+            for(size_t j = 0; j < i; j++ ){
+                free(r->names[j]);
+            }
+
+            // free the record struct and return null
+            free(r);
+            return NULL;
+        }
+        // copy the strings and set set initial value to nil
+        strcpy(r->names[i], field_names[i]);
+        r->values[i] = dt_value_nil();
+    }
+
+    return r;
 }
 
 /*
@@ -50,7 +89,20 @@ void dt_record_free(dt_record *r)
     /* TODO: Release the copied field names. Then release the record.
        a record holding a string value  -> the names go, the string stays
        dt_record_free(NULL)             -> returns, having done nothing */
-    (void)r;
+    //(void)r;
+
+    //return if null
+    if(r == NULL){
+        return;
+    }
+
+    //iterate through all copied field names and free them 
+    for(size_t i = 0; i < r->count; i++){
+        free(r->names[i]);
+    }
+
+    // free the record struct itself
+    free(r);
 }
 
 /*
@@ -62,8 +114,12 @@ size_t dt_record_field_count(const dt_record *r)
        The count does not change after construction.
        after `rec new person name age`:  dt_record_field_count(person) -> 2
        cases/normal/record_basics.case */
-    (void)r;
-    return 0;
+    //(void)r;
+    //return 0;
+
+    // return the stored field count
+    return r->count;
+
 }
 
 /*

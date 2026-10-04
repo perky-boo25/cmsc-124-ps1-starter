@@ -350,8 +350,13 @@ dt_status dt_map_key_at(const dt_map *m, size_t index, const char **out)
          dt_map_key_at(m, 0, &out)  -> DT_OK, *out = "alpha"
          dt_map_key_at(m, 3, &out)  -> DT_ERR_RANGE, *out untouched
        cases/normal/map_basics.case */
-    (void)m;
-    (void)index;
-    (void)out;
-    return DT_ERR_RANGE;
+    
+    // index has to be less than the number of keys
+    if (index >= m->count) {
+        return DT_ERR_RANGE;
+    }
+
+    // only write to out after the check passes
+    *out = m->order[index]->key;
+    return DT_OK;
 }

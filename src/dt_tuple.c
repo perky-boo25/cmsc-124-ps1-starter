@@ -91,8 +91,9 @@ size_t dt_tuple_arity(const dt_tuple *t)
        after `tup new pair 1 "two"`:  dt_tuple_arity(pair) -> 2
        after `tup new empty`:         dt_tuple_arity(empty) -> 0
        cases/normal/tuple_basics.case */
-    (void)t;
-    return 0;
+    
+    // arity is set once in the constructor and never changes
+    return t->arity;
 }
 
 /*
@@ -106,8 +107,14 @@ dt_status dt_tuple_at(const dt_tuple *t, size_t index, dt_value *out)
          dt_tuple_at(t, 0, &out)  -> DT_OK, *out is the integer 1
          dt_tuple_at(t, 2, &out)  -> DT_ERR_RANGE, *out untouched
        cases/normal/tuple_basics.case, cases/boundary/tuple_index_past_arity.case */
-    (void)t;
-    (void)index;
-    (void)out;
-    return DT_ERR_RANGE;
+    
+    // positions run from 0 to arity - 1, so index == arity is already too far
+    // an empty tuple has arity 0, so every index fails and values is never read
+    if (index >= t->arity) {
+        return DT_ERR_RANGE;
+    }
+
+    // only write to out after the check passes
+    *out = t->values[index];
+    return DT_OK;
 }

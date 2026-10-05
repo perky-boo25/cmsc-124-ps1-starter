@@ -98,8 +98,21 @@ size_t dt_list_len(const dt_list *l)
        for a = (1 2 3):  dt_list_len(a) -> 3
        for the empty list: dt_list_len(NULL) -> 0
        cases/normal/list_basics.case */
-    (void)l;
-    return 0;
+    //(void)l;
+    //return 0;
+
+    size_t count = 0;
+    const dt_list *current = l ;
+
+    // iterate down the list tail until we found NULL
+    // countimg the number of 'cells' in the list
+    while(current != NULL){
+        count++;
+        current = current->tail;
+    }
+
+    // return the total number of cells we counted
+    return count;
 }
 
 /*
@@ -114,9 +127,18 @@ dt_status dt_list_car(const dt_list *l, dt_value *out)
        for a = (1 2 3):     dt_list_car(a, &out)    -> DT_OK, *out is 1
        for the empty list:  dt_list_car(NULL, &out) -> DT_ERR_EMPTY, *out untouched
        cases/normal/list_basics.case, cases/boundary/list_car_empty.case */
-    (void)l;
-    (void)out;
-    return DT_ERR_EMPTY;
+    //(void)l;
+    //(void)out;
+    //return DT_ERR_EMPTY;
+
+    // if list is empty, return an error and leave the list untouch
+    if (l == NULL){
+        return DT_ERR_EMPTY;
+    }
+
+    // assign the first cell's value to out and return ok
+    *out = l->head;
+    return DT_OK;
 }
 
 /*
@@ -130,7 +152,15 @@ dt_status dt_list_cdr(const dt_list *l, dt_list **out)
        for a = (1 2 3):     dt_list_cdr(a, &out)    -> DT_OK, *out references tail b
        for the empty list:  dt_list_cdr(NULL, &out) -> DT_ERR_EMPTY, *out untouched
        cases/normal/list_basics.case, cases/boundary/list_cdr_empty.case */
-    (void)l;
-    (void)out;
-    return DT_ERR_EMPTY;
+    //(void)l;
+    //(void)out;
+    //return DT_ERR_EMPTY;
+
+    if (l == NULL){
+        return DT_ERR_EMPTY;
+    }
+
+    // assign the tail pointer to out and return ok
+    *out = l ->tail;
+    return DT_OK;
 }

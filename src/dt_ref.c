@@ -84,9 +84,16 @@ dt_status dt_ref_borrow(const dt_ref *p, dt_value *out)
                                                           *out untouched
        cases/ownership/ref_released.case,
        cases/post-release/borrow_after_release.case */
-    (void)p;
-    (void)out;
-    return DT_ERR_RELEASED;
+    
+    // check the flag first. after release the cell is gone,
+    // so touching p->cell would be a dangling read
+    if (p->released) {
+        return DT_ERR_RELEASED;
+    }
+
+    // out only gets written when the ref is still live
+    *out = *(p->cell);
+    return DT_OK;
 }
 
 /*

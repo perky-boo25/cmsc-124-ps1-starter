@@ -157,5 +157,20 @@ void dt_ref_destroy(dt_ref *p)
        a released reference  -> only the handle is left to free
        a live reference      -> the cell and the handle both go, quietly
        dt_ref_destroy(NULL)  -> returns, having done nothing */
-    (void)p;
+    //(void)p;
+
+    // check if p is NULL, if no ref to destroy, then exit the function by return
+    if (p == NULL){
+        return;
+    }
+
+    // if the ref is still active and hindi pa siya released, 
+    // i free the mem allocation for cell, if released na , then skip
+    if(!p->released){
+        free(p->cell);
+    }
+
+    // after mafree ang cell, i-free naman ang main ref
+    // this is para both ang cell and the outer structure are clear
+    free(p);
 }

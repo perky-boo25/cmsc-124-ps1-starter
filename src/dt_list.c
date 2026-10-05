@@ -54,9 +54,19 @@ dt_list *dt_list_cons(dt_value head, dt_list *tail)
        List b contains (2 3) and references the same cells for 2 and 3.
        an allocation failure -> NULL
        cases/normal/list_basics.case, cases/cleanup/shared_list_tail.case */
-    (void)head;
-    (void)tail;
-    return NULL;
+    // one new cell, that's all cons ever allocates
+    dt_list *cell = malloc(sizeof(dt_list));
+    if (cell == NULL) {
+        return NULL;
+    }
+
+    cell->head = head;
+
+    // point at the existing tail instead of copying it.
+    // this is how two lists end up sharing the same cells
+    cell->tail = tail;
+
+    return cell;
 }
 
 /*
@@ -69,7 +79,14 @@ void dt_list_free(dt_list *l)
        freeing a's first cell  -> b still reaches the cells holding 2 and 3
        releasing the tail here causes the sanitizer to report a double release
        cases/cleanup/shared_list_tail.case */
-    (void)l;
+
+    // the empty list is NULL, so there's nothing to free
+    if (l == NULL) {
+        return;
+    }
+
+    // free only this cell, not the tail that other lists might still use
+    free(l);
 }
 
 /*

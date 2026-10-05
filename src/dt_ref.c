@@ -111,8 +111,21 @@ dt_status dt_ref_release(dt_ref *p)
        a reference holding a string     -> releases the cell and preserves the string
        cases/ownership/ref_double_release.case,
        cases/ownership/ref_aliases_string.case */
-    (void)p;
-    return DT_ERR_RELEASED;
+    
+    // already released, so the cell is already freed.
+    // freeing again would be a double free
+    if (p->released) {
+        return DT_ERR_RELEASED;
+    }
+
+    // free only the cell. if it holds a string, the string is still owned by the environment
+    free(p->cell);
+
+    // clear the stale address and raise the flag
+    // the flag is what every later call checks
+    p->cell = NULL;
+    p->released = true;
+    return DT_OK;
 }
 
 /*
@@ -127,8 +140,9 @@ bool dt_ref_is_released(const dt_ref *p)
        a live reference        -> false, so the driver reports DT_ERR_LEAK
        after dt_ref_release(p) -> true, so the driver reports no leak
        cases/ownership/ref_never_released.case, cases/ownership/ref_released.case */
-    (void)p;
-    return true;
+    
+    // return the real flag, not a constant true or false, so the driver can check for leaks
+    return p->released;
 }
 
 /*

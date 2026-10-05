@@ -40,8 +40,33 @@ dt_ref *dt_ref_new(dt_value v)
        dt_ref_new(dt_value_int(42))  -> a reference that prints as ref(42)
        an allocation failure          -> NULL
        cases/ownership/ref_released.case */
-    (void)v;
-    return NULL;
+    //(void)v;
+    //return NULL;
+
+    // i allocate the main ref structure. basically gya ko ginbutang
+    // ang pointer to the actual value and then the release state status
+    dt_ref *p = malloc(sizeof(dt_ref));
+    if (p == NULL){
+        return NULL;
+    }
+
+    // i allocate separate space for the actual dt_value
+    // then, ginconnect ko ang memory space to this cell pointer
+    p->cell = malloc(sizeof(dt_value));
+
+    // if nagfail ang cell alloc, then i cannot just return NULL because it is allocated
+    // so, free up the memory then return NULL; avoid memory leaks
+    if(p->cell == NULL){
+        free(p);
+        return NULL;
+    }
+
+    // since both alloc works, copy value into the cell
+    // gin set ko man into false ang release because the ref is still active
+    *(p->cell) = v;
+    p->released = false;
+
+    return p;
 }
 
 /*

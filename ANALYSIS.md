@@ -37,6 +37,28 @@ In the tag checking, we had to manually make sure that we are reading a value as
 
 ---
 
+# Question 3
+
+> Your dt_map keeps insertion order separately from the hash buckets, which is memory spent on something no lookup uses. Argue the other side: describe a design that drops it, say what breaks, and say whether you'd ship it.
+
+In our dt_map, the order array lives separately from the hash buckets, but dt_get_map only uses buckets when looking up a value. If we simply delete this order array, we would reduce the complexity of our code since the map would consist of chain buckets and their count. The basic operations like getting, adding, and removing a value would still work because they do not really depend on the order array. The only affected operation would be the dt_map_key_at, because without the order array, we would have to go through the buckets to find the key at a certain position. 
+
+The problem is that any functionality depending on ordering becomes broken. The key order would follow the order of buckets determined by hashing instead of the insertion order that our map is expected to preserve. For the assignment, we would  still keep the order array because the map is expected to keep a specific order when we access or print its keys. Even though it uses additional memory, it is worth keeping because removing it would make the map less useful for what the program actually needs.
+
+---
+
+# Question 4
+
+> Compare access after release with an allocation that remains unreleased at the driver's final check. What damage can each cause in a long-running server? How does that answer change for a command-line tool that exits in a second?
+
+Access after release and unreleased allocation are examples of ownership errors, but they cause different problems. Accessing a block that was already released results in undefined behavior. In case of a server application running for a long time, that memory might already be used for something else, so the program could end up reading or changing data that it should not be touching. This makes it a much more serious problem for a program that keeps running and handling many requests because the same memory may already belong to another part of the program. Our dt_ref specifically prevents this by checking the released flag before accessing the cell. 
+
+An unreleased allocation is the opposite, where the program simply keeps memory that it no longer needs. In a server application, having a memory leak on every single request will result in continuously increasing memory usage because the program continues running and keeps allocating without giving that memory back. It might not cause an immediate problem, but the memory usage can keep building up over time.  Our dt_ref_is_released function allows the driver to detect this during the final check and report DT_ERR_LEAK.
+
+In case of a command-line tool that exits in one second, the situation with a memory leak is somewhat different because the program does not run long enough for the leaked memory to build up significantly. However, accessing memory after it is released is still a problem because it can produce unpredictable results, even in a short-running program. So for a long running program, both errors are important, but an unreleased allocation can continuously accumulate while an access after release can immediately interfere with memory being used by something else. For like a short command line prog, the leak is less noticeable, but the access after release is still something we should not ignore. 
+
+---
+
 # References
 
 1. *Chapter 10. Arrays*. (2026, September 15). <https://docs.oracle.com/javase/specs/jls/se19/html/jls-10.html>
